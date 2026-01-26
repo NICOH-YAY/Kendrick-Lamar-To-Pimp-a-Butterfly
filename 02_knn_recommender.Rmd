@@ -1,0 +1,126 @@
+```{r}
+library(class)
+library(caret)
+library(dplyr)
+
+
+#Load the feature set
+
+features <- read.csv("D:/Coding - R/TPAB Music recs/scripts/data/processed/tpab_features_full.csv", stringsAsFactors = FALSE)
+print(head(features, 3))
+
+#Prepare feature matrix (exclude non-numeric columns)
+feature_columns <- c("duration_ms", "popularity", "speechiness", "danceability", 
+                     "tempo", "sentiment_mean", "sentiment_volatility", 
+                     "sentiment_range", "theme_justice", "theme_self", 
+                     "theme_spirituality", "theme_money")
+
+feature_matrix <- features[, feature_columns]
+
+feature_matrix[is.na(feature_matrix)] <- 0
+#scaling features
+scaler <- preProcess(feature_matrix, method = c("center", "scale"))
+feature_scaled <- predict(scaler, feature_matrix)
+
+
+find_similar_songs <- function(target_song_name, feature_data, 
+                                song_names, k = 5) {
+  # Find the target song index
+  target_idx <- which(song_names == target_song_name)
+  
+  if (length(target_idx) == 0) {
+    stop("Song not found in dataset: ", target_song_name)
+  }
+  
+ 
+  train_data <- feature_data[-target_idx, ]
+  train_names <- song_names[-target_idx]
+  
+
+  test_point <- feature_data[target_idx, , drop = FALSE]
+  
+  #KNN
+  knn_result <- knn(train = train_data, test = test_point, 
+                    cl = train_names, k = k)
+  
+  # Get distances for ranking
+  distances <- as.matrix(dist(rbind(test_point, train_data)))[1, -1]
+  
+  # Create results dataframe
+  results <- data.frame(
+    original_song = target_song_name,
+    recommended_song = train_names,
+    similarity_rank = rank(distances),
+    distance = distances,
+    stringsAsFactors = FALSE
+  ) %>%
+    arrange(similarity_rank) %>%
+    head(k)
+  
+  return(results)
+}
+
+#recommender
+cat(paste(features$track_name, collapse = "\n"), "\n")
+
+# Example; Find songs similar to "Alright"
+alright_similar <- find_similar_songs(
+  target_song_name = "Alright", 
+  feature_data = feature_scaled,
+  song_names = features$track_name,
+  k = 5
+)
+print(alright_similar)
+
+# Example 2: Find songs similar to "King Kunta"
+kunta_similar <- find_similar_songs(
+  target_song_name = "King Kunta", 
+  feature_data = feature_scaled,
+  song_names = features$track_name,
+  k = 5
+)
+print(kunta_similar)
+
+#  Album-wide recommendations (find most central songs)
+# Calculate centroid of all TPAB songs
+centroid <- colMeans(feature_scaled)
+
+# Find songs closest to the centroid (most representative)
+centroid_distances <- apply(feature_scaled, 1, function(x) {
+  sqrt(sum((x - centroid)^2))
+})
+
+album_recommendations <- data.frame(
+  track_name = features$track_name,
+  distance_to_centroid = centroid_distances,
+  stringsAsFactors = FALSE
+) %>%
+  arrange(distance_to_centroid)
+
+
+print(head(album_recommendations, 5))
+#prepare the album_recommendations to match the single-song results format
+album_recomm_formatted <- album_recommendations %>%
+  rename(recommended_song = track_name,
+         distance = distance_to_centroid) %>%
+  mutate(original_song = "TPAB_Centroid",
+         similarity_rank = rank(distance),
+         query_type = "album_centroid") %>%
+  select(query_type, original_song, recommended_song, similarity_rank, distance)
+
+#combine results
+output_recommendations <- rbind(
+  cbind(query_type = "single_song", alright_similar),
+  cbind(query_type = "single_song", kunta_similar),
+  album_recomm_formatted
+)
+
+if (!dir.exists("outputs")) {
+  dir.create("outputs")
+}
+
+write.csv(output_recommendations, 
+          "outputs/recommendations.csv", 
+          row.names = FALSE)
+
+```

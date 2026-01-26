@@ -1,0 +1,143 @@
+```{r}
+library(tidytext)
+
+library(textdata)
+library(stringr)
+library(tidyverse)
+
+```
+
+```{r}
+tpab_raw <- discog_data %>% filter(grepl("To Pimp a Butterfly|pimp a butterfly", album, ignore.case = TRUE))
+```
+
+```{r}
+afinn_lexicon <- data.frame(
+  word = c("good", "great", "love", "happy", "positive", 
+           "bad", "terrible", "hate", "sad", "negative"),
+  value = c(3, 4, 3, 2, 2, -3, -5, -3, -2, -2)
+)
+extract_thematic_features <- function(lyrics_text) {
+  if (is.na(lyrics_text) || nchar(lyrics_text) == 0) {
+    return(data.frame(
+      sentiment_mean = 0,
+      sentiment_volatility = 0,
+      sentiment_range = 0,
+      theme_justice = 0,
+      theme_self = 0,
+      theme_spirituality = 0,
+      theme_money = 0
+    ))
+  }
+  
+  words <- tibble(text = lyrics_text) %>%
+    unnest_tokens(word, text)
+  
+  sentiment_words <- words %>%
+    inner_join(afinn_lexicon, by = "word")
+  
+  if (nrow(sentiment_words) > 0) {
+    sentiment_mean <- mean(sentiment_words$value)
+    sentiment_volatility <- ifelse(is.na(sd(sentiment_words$value)), 0, sd(sentiment_words$value))
+    sentiment_range <- max(sentiment_words$value) - min(sentiment_words$value)
+  } else {
+    sentiment_mean <- sentiment_volatility <- sentiment_range <- 0
+  }
+  
+  # Custom theme dictionaries for TPAB
+  themes <- list(
+    theme_justice = c("oppression", "power", "fight", "racism", "police", 
+                      "justice", "inequality", "protest", "black", "white"),
+    theme_self = c("i", "me", "my", "mine", "myself", "self"),
+    theme_spirituality = c("god", "faith", "pray", "heaven", "hell", 
+                           "sin", "bless", "soul", "spirit"),
+    theme_money = c("money", "cash", "dollar", "cost", "rich", 
+                    "poor", "price", "wealth", "broke")
+  )
+  
+  # Calculate theme densities
+  word_list <- unlist(strsplit(tolower(lyrics_text), "\\W+"))
+  theme_densities <- sapply(themes, function(theme_words) {
+    sum(word_list %in% theme_words) / max(length(word_list), 1)
+  })
+  
+  return(data.frame(
+    sentiment_mean = sentiment_mean,
+    sentiment_volatility = sentiment_volatility,
+    sentiment_range = sentiment_range,
+    theme_justice = theme_densities["theme_justice"],
+    theme_self = theme_densities["theme_self"],
+    theme_spirituality = theme_densities["theme_spirituality"],
+    theme_money = theme_densities["theme_money"]
+  ))
+}
+
+
+thematic_features <- do.call(rbind, lapply(tpab_raw$lyrics, extract_thematic_features))
+
+
+
+tpab_features <- tpab_raw %>%
+  select(track_name, album, release_date, duration_ms, popularity, 
+         speechiness, danceability, tempo) %>%
+  bind_cols(thematic_features)
+
+
+output_dir <- "data/processed"
+if (!dir.exists(output_dir)) {
+  cat("4. Creating directory:", output_dir, "\n")
+  dir.create(output_dir, recursive = TRUE)
+}
+
+output_path <- file.path(output_dir, "tpab_features_full.csv")
+write.csv(tpab_features, output_path, row.names = FALSE)
+print(head(tpab_features, 2))
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+
+```
+
+```{r}
+
+```
+
+```         
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```
+
+```{r}
+
+```

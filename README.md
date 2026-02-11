@@ -29,7 +29,7 @@ Finally, I treated each TPAB song as a new, unlabeled data point and asked: "Bas
 I used KNN classification, a supervised method. For a given TPAB song, the algorithm finds its k=5 closest neighbors from the rap song dataset. It then assigns the TPAB song to the most common cluster among those five neighbors
 Each TPAB song received a thematic classification (e.g., "Social Justice Focus") and a confidence score (e.g., 0.8), which reflects how unanimous the vote from its five nearest rap song neighbors was.
 
- 🧠 What I Learned: k-Means vs. KNN
+ 🧠 What I Learned: K-Means vs. KNN
 
 
  

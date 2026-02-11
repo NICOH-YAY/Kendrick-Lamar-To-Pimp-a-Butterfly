@@ -39,8 +39,8 @@ Each TPAB song received a thematic classification (e.g., "Social Justice Focus")
 
 
  
-   While insightful, this project has some important limitations, primarily due to data constraints.
-he most significant limitation is that the rap song dataset was pre-existing and static. At the time of development, the Spotify Web API was down. A pre-configured dataset means the analysis is a snapshot and not easily replicable or expandable with newer music.
+   While insightful, this project has some important limitations primarily due to data constraints.
+The most significant limitation is that the rap song dataset was pre-existing and static. At the time of development, the Spotify Web API was down. A pre-configured dataset means the analysis is a snapshot and not easily replicable or expandable with newer music.
 The thematic dictionaries, while thoughtful, are ultimately simplified. Human language and symbolism (like the "caterpillar/butterfly" metaphor central to TPAB) are nuanced, and a bag-of-words model cannot capture that context
 
 🚀 Future Iterations & Practical Improvements
